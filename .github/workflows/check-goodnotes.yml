@@ -1,0 +1,52 @@
+name: Check Goodnotes every three days
+on:
+  schedule:
+    - cron: '23 2 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['check_goodnotes.py', '.github/workflows/check-goodnotes.yml']
+permissions:
+  contents: write
+concurrency:
+  group: goodnotes-monitor
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Three-day calendar gate (Asia/Taipei)
+        id: due
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python - <<'PY'
+          import datetime as d, os
+          today=d.datetime.now(d.timezone(d.timedelta(hours=8))).date()
+          due=os.environ['EVENT_NAME']!='schedule' or (today-d.date(2026,11,21)).days%3==0
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write('run='+str(due).lower()+'\n')
+          PY
+      - uses: actions/checkout@v6
+        if: steps.due.outputs.run == 'true'
+      - name: Detect public notebook revisions
+        if: steps.due.outputs.run == 'true'
+        run: python3 check_goodnotes.py
+      - name: Save check result and pending changes
+        if: steps.due.outputs.run == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add monitor/
+          if ! git diff --cached --quiet; then
+            git commit -m 'Record Goodnotes change check'
+            git pull --rebase
+            git push
+          fi
+      - uses: actions/upload-artifact@v4
+        if: steps.due.outputs.run == 'true'
+        with:
+          name: goodnotes-change-report
+          path: monitor/
+          retention-days: 90
