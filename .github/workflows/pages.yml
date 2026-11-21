@@ -2,7 +2,7 @@ name: Deploy question bank
 on:
   push:
     branches: [main]
-    paths: ['site-part-*.zip', '.github/workflows/pages.yml']
+    paths: ['site-part-*.zip', 'optimize_site.py', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,6 +26,8 @@ jobs:
           test -s _site/index.html
           test "$(find _site/pages -name '*.png' | wc -l)" -eq 292
           touch _site/.nojekyll
+      - name: Optimize initial rendering and font caching
+        run: python3 optimize_site.py _site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
