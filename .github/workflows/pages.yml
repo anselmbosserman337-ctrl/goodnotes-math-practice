@@ -2,7 +2,7 @@ name: Deploy question bank
 on:
   push:
     branches: [main]
-    paths: ['site-part-*.zip', 'optimize_site.py', '.github/workflows/pages.yml']
+    paths: ['site-part-*.zip', 'updates/**', 'optimize_site.py', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -23,8 +23,9 @@ jobs:
         run: |
           mkdir -p _site
           for archive in site-part-*.zip; do unzip -q -o "$archive" -d _site; done
+          for archive in updates/*/*.zip; do unzip -q -o "$archive" -d _site; done
           test -s _site/index.html
-          test "$(find _site/pages -name '*.png' | wc -l)" -eq 292
+          test "$(find _site/pages -name '*.png' | wc -l)" -eq "$(python3 -c 'import json; print(len(json.load(open("monitor/reviewed.json"))["pages"]))')"
           touch _site/.nojekyll
       - name: Optimize initial rendering and font caching
         run: python3 optimize_site.py _site
