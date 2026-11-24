@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-24T00:27:49+00:00",
+  "checked_at": "2026-11-24T12:35:58+00:00",
   "initial_baseline": false,
   "page_count": 308,
   "changed": true,
@@ -10,9 +10,11 @@
   "moved_pages": [],
   "removed_previous_pages": [],
   "pending_since_transcription": {
-    "changed": false,
+    "changed": true,
     "added_pages": [],
-    "modified_pages": [],
+    "modified_pages": [
+      304
+    ],
     "moved_pages": [],
     "removed_previous_pages": []
   }
