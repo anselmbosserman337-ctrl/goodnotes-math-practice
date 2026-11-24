@@ -12,11 +12,10 @@ concurrency:
   group: pages
   cancel-in-progress: false
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      artifact: ${{ steps.package.outputs.name }}
     steps:
       - uses: actions/checkout@v6
       - name: Unpack static website
@@ -29,10 +28,22 @@ jobs:
           touch _site/.nojekyll
       - name: Optimize initial rendering and font caching
         run: python3 optimize_site.py _site
-      - uses: actions/configure-pages@v5
+      - id: package
+        run: echo "name=github-pages-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
+          name: ${{ steps.package.outputs.name }}
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
       - name: Publish
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ needs.build.outputs.artifact }}
